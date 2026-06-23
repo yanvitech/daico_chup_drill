@@ -314,6 +314,42 @@ body {
   color: var(--or-clair);
 }
 
+/* ─── Bento Grid Card ─── */
+.bento-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.bento-card:hover {
+  border-color: rgba(201,168,76,0.3);
+  background: rgba(255,255,255,0.035);
+  box-shadow: 0 4px 30px rgba(139,0,0,0.08);
+}
+
+/* ─── Bento Grid Responsive ─── */
+@media (max-width: 640px) {
+  .bento-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .bento-grid > * {
+    grid-row: auto !important;
+  }
+}
+
+/* ─── Custom cursor hiding on interactive elements ─── */
+a:hover ~ .custom-cursor,
+button:hover ~ .custom-cursor,
+input:hover ~ .custom-cursor {
+  opacity: 0;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .custom-cursor { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-flicker,
   .animate-float,

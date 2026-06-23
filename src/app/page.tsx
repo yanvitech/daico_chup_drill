@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 
 /* ─── Ember Particles ─── */
 function EmberParticles({ count = 20 }: { count?: number }) {
@@ -38,6 +39,94 @@ function EmberParticles({ count = 20 }: { count?: number }) {
           boxShadow: '0 0 6px rgba(201,168,76,0.3)',
         }} />
       ))}
+    </div>
+  );
+}
+
+/* ─── Custom Cursor ─── */
+function CustomCursor() {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [visible, setVisible] = useState(false);
+  const [isTouch, setIsTouch] = useState(true);
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(pointer: coarse)').matches);
+    const onMove = (e: MouseEvent) => setPos({ x: e.clientX, y: e.clientY });
+    const onLeave = () => setVisible(false);
+    const onEnter = () => setVisible(true);
+    window.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseleave', onLeave);
+    document.addEventListener('mouseenter', onEnter);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('mouseenter', onEnter);
+    };
+  }, []);
+
+  if (isTouch) return null;
+
+  return (
+    <>
+      <div style={{
+        position: 'fixed', pointerEvents: 'none', zIndex: 9999,
+        width: '6px', height: '6px', background: '#C9A84C', borderRadius: '50%',
+        left: pos.x - 3, top: pos.y - 3,
+        opacity: visible ? 1 : 0,
+        transition: 'opacity 0.3s',
+        boxShadow: '0 0 10px rgba(201,168,76,0.5), 0 0 20px rgba(201,168,76,0.2)',
+      }} />
+      <motion.div
+        animate={{ x: pos.x - 16, y: pos.y - 16 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 22, mass: 0.3 }}
+        style={{
+          position: 'fixed', pointerEvents: 'none', zIndex: 9998,
+          width: '32px', height: '32px',
+          border: '1px solid rgba(201,168,76,0.25)',
+          borderRadius: '50%',
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 0.3s',
+        }}
+      />
+    </>
+  );
+}
+
+/* ─── Parallax Kanji ─── */
+function ParallaxKanji({ text, style }: { text: string; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  const y = useTransform(scrollYProgress, [0, 1], [-60, 60]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.03, 0.07, 0.03]);
+
+  return (
+    <motion.span ref={ref} className="kanji-bg" style={{ ...style, y, opacity }}>
+      {text}
+    </motion.span>
+  );
+}
+
+/* ─── Vertical Japanese Text Decoration ─── */
+function VerticalText({ text, position = 'left' }: { text: string; position?: 'left' | 'right' }) {
+  return (
+    <div className="font-display" style={{
+      position: 'absolute',
+      [position]: '8px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      writingMode: 'vertical-rl',
+      textOrientation: 'upright',
+      fontSize: 'clamp(11px, 1.2vw, 15px)',
+      letterSpacing: '0.3em',
+      color: 'rgba(201,168,76,0.1)',
+      pointerEvents: 'none',
+      userSelect: 'none',
+      lineHeight: 1.8,
+    }}>
+      {text}
     </div>
   );
 }
@@ -87,34 +176,23 @@ const IconExternal = () => (
 /* ─── Logo SVG ─── */
 const DaicoLogo = ({ size = 80 }: { size?: number }) => (
   <svg width={size} height={size * 0.625} viewBox="0 0 320 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-    {/* Cercle fond */}
     <circle cx="160" cy="100" r="70" fill="rgba(201,168,76,0.07)" stroke="rgba(201,168,76,0.2)" strokeWidth="1"/>
-    {/* Kanji gauche */}
     <text x="20" y="130" fontFamily="'Shippori Mincho',serif" fontSize="70" fontWeight="800" fill="rgba(201,168,76,0.5)">笑</text>
-    {/* Kanji droit */}
     <text x="225" y="130" fontFamily="'Shippori Mincho',serif" fontSize="70" fontWeight="800" fill="rgba(201,168,76,0.5)">宗</text>
-    {/* Katana blade */}
     <line x1="60" y1="155" x2="255" y2="45" stroke="#D8C870" strokeWidth="3" strokeLinecap="round"/>
-    {/* Garde tsuba */}
     <ellipse cx="220" cy="62" rx="12" ry="7" transform="rotate(-28 220 62)" fill="#C9A84C" stroke="#E8D080" strokeWidth="1"/>
-    {/* Poignée */}
     <rect x="228" y="38" width="48" height="14" rx="3" transform="rotate(-28 228 38)" fill="#2a1a0a" stroke="#C9A84C" strokeWidth="1"/>
-    {/* Texture poignée */}
     <line x1="240" y1="47" x2="244" y2="37" stroke="#C9A84C" strokeWidth="0.8" opacity="0.5"/>
     <line x1="250" y1="43" x2="254" y2="33" stroke="#C9A84C" strokeWidth="0.8" opacity="0.5"/>
     <line x1="260" y1="40" x2="264" y2="30" stroke="#C9A84C" strokeWidth="0.8" opacity="0.5"/>
-    {/* As de pique */}
     <g transform="translate(130, 62)">
       <rect x="0" y="0" width="52" height="68" rx="4" fill="#F5EAB0" stroke="rgba(201,168,76,0.4)" strokeWidth="0.5"/>
       <path d="M26 10 C26 10 10 26 10 34 C10 42 18 44 22 40 C20 46 14 52 14 52 L38 52 C38 52 32 46 30 40 C34 44 42 42 42 34 C42 26 26 10 26 10Z" fill="#1a1a1a"/>
       <text x="5" y="16" fontFamily="serif" fontSize="12" fontWeight="800" fill="#1a1a1a">A</text>
       <text x="5" y="28" fontFamily="serif" fontSize="10" fill="#1a1a1a">♠</text>
     </g>
-    {/* KATANA text */}
     <text x="160" y="18" fontFamily="'Rajdhani',sans-serif" fontSize="14" fontWeight="700" fill="#C9A84C" textAnchor="middle" letterSpacing="6">KATANA</text>
-    {/* AMIRI text */}
     <text x="160" y="192" fontFamily="'Rajdhani',sans-serif" fontSize="14" fontWeight="700" fill="#C9A84C" textAnchor="middle" letterSpacing="6">AMIRI</text>
-    {/* Coins décoratifs */}
     <line x1="10" y1="10" x2="30" y2="10" stroke="rgba(201,168,76,0.4)" strokeWidth="0.8"/>
     <line x1="10" y1="10" x2="10" y2="30" stroke="rgba(201,168,76,0.4)" strokeWidth="0.8"/>
     <line x1="290" y1="10" x2="310" y2="10" stroke="rgba(201,168,76,0.4)" strokeWidth="0.8"/>
@@ -168,6 +246,20 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
+/* ─── Reveal animation wrapper ─── */
+function Reveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.6, ease: 'easeOut', delay }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
 /* ─── NAVBAR ─── */
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -186,7 +278,7 @@ function Navbar() {
     };
   }, []);
 
-  const links = ['musique', 'videos', 'bio', 'contact'];
+  const links = ['musique', 'bio', 'videos', 'contact'];
 
   return (
     <nav style={{
@@ -208,7 +300,6 @@ function Navbar() {
 
       {isMobile ? (
         <>
-          {/* Hamburger */}
           <button onClick={() => setMenuOpen(!menuOpen)} style={{
             background: 'none', border: 'none', cursor: 'pointer',
             color: '#C9A84C', padding: '8px', zIndex: 101,
@@ -219,7 +310,6 @@ function Navbar() {
             <span style={{ display: 'block', width: '24px', height: '2px', background: '#C9A84C', transition: '0.3s', transform: menuOpen ? 'rotate(-45deg) translate(5px,-5px)' : 'none' }} />
           </button>
 
-          {/* Mobile menu */}
           {menuOpen && (
             <div onClick={() => setMenuOpen(false)} style={{
               position: 'fixed', inset: 0, zIndex: 99,
@@ -254,7 +344,6 @@ function Navbar() {
           )}
         </>
       ) : (
-        /* Desktop links */
         <div className="font-street" style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
           {links.map((id) => (
             <a key={id} href={`#${id}`} style={{
@@ -291,12 +380,17 @@ function Hero() {
       alignItems: 'center',
       justifyContent: 'center',
       overflow: 'hidden',
+      cursor: 'none',
       background: 'radial-gradient(ellipse at 30% 50%, rgba(139,0,0,0.12) 0%, transparent 60%), #080808',
     }}>
-      {/* Kanji background watermarks */}
-      <span className="kanji-bg animate-float" style={{ top: '10%', left: '-2%', '--rot': '-5deg' } as React.CSSProperties}>斬</span>
-      <span className="kanji-bg animate-float" style={{ bottom: '5%', right: '-1%', '--rot': '8deg', animationDelay: '2s', fontSize: 'clamp(60px,10vw,130px)' } as React.CSSProperties}>刃</span>
-      <span className="kanji-bg animate-float" style={{ top: '40%', right: '5%', '--rot': '-3deg', animationDelay: '4s', fontSize: 'clamp(40px,7vw,90px)' } as React.CSSProperties}>魂</span>
+      {/* Parallax kanji backgrounds */}
+      <ParallaxKanji text="斬" style={{ top: '10%', left: '-2%', fontSize: 'clamp(80px,12vw,160px)' }} />
+      <ParallaxKanji text="刃" style={{ bottom: '5%', right: '-1%', fontSize: 'clamp(60px,10vw,130px)' }} />
+      <ParallaxKanji text="魂" style={{ top: '40%', right: '5%', fontSize: 'clamp(40px,7vw,90px)' }} />
+
+      {/* Vertical Japanese accent */}
+      <VerticalText text="武 士 の 道" position="left" />
+      <VerticalText text="音 を 切 る" position="right" />
 
       {/* Ember particles */}
       <EmberParticles count={24} />
@@ -321,7 +415,6 @@ function Hero() {
         }} />
       </div>
 
-      {/* Main content */}
       <div style={{
         position: 'relative',
         zIndex: 2,
@@ -329,7 +422,6 @@ function Hero() {
         padding: '120px 24px 60px',
         maxWidth: '900px',
       }}>
-        {/* Logo */}
         <div style={{
           display: 'flex',
           justifyContent: 'center',
@@ -341,7 +433,6 @@ function Hero() {
           <DaicoLogo size={120} />
         </div>
 
-        {/* Subtitle label */}
         <div style={{
           opacity: loaded ? 1 : 0,
           transform: loaded ? 'translateY(0)' : 'translateY(20px)',
@@ -350,8 +441,7 @@ function Hero() {
           <SectionLabel>Afrodrill · Drill Bénin · AMIRI</SectionLabel>
         </div>
 
-        {/* Main title */}
-          <h1 className="font-display" style={{
+        <h1 className="font-display" style={{
           fontSize: 'clamp(52px, 12vw, 130px)',
           fontWeight: 800,
           lineHeight: 0.9,
@@ -368,7 +458,6 @@ function Hero() {
           <span style={{ color: '#F0EDE8', WebkitTextStroke: '1px rgba(201,168,76,0.3)' }}>CHUP</span>
         </h1>
 
-        {/* Amiri tagline */}
         <p className="font-street" style={{
           fontSize: 'clamp(14px, 2.5vw, 22px)',
           color: '#8B0000',
@@ -392,7 +481,6 @@ function Hero() {
           Le son qui tranche. La lame qui groove.
         </p>
 
-        {/* CTAs */}
         <div style={{
           display: 'flex',
           gap: '16px',
@@ -410,7 +498,6 @@ function Hero() {
           </a>
         </div>
 
-        {/* Scroll indicator */}
         <div style={{
           marginTop: '80px',
           display: 'flex',
@@ -434,8 +521,13 @@ function Hero() {
   );
 }
 
-/* ─── MUSIQUE ─── */
+/* ─── MUSIQUE (Bento Grid) ─── */
 function Musique() {
+  const tracks = [
+    { title: 'DORIMIN DRILL', desc: 'Le cut qui a tout lancé', plays: '12.4K' },
+    { title: 'Djandjou 2K6', desc: 'Afrodrill pur — rythme et lame', plays: '8.1K' },
+  ];
+
   return (
     <section id="musique" style={{
       background: 'linear-gradient(180deg, #080808 0%, #100505 40%, #080808 100%)',
@@ -443,102 +535,291 @@ function Musique() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Background kanji */}
-      <span className="kanji-bg" style={{ top: '20%', left: '2%', opacity: 0.05 }}>音</span>
+      <ParallaxKanji text="音" style={{ top: '20%', left: '2%' }} />
+      <VerticalText text="流 音 撃" position="left" />
 
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        <SectionLabel>Streaming</SectionLabel>
-        <h2 className="font-display text-gold-gradient" style={{
-          fontSize: 'clamp(32px, 6vw, 64px)',
-          fontWeight: 800,
-          marginBottom: '8px',
-        }}>
-          La Musique
-        </h2>
-        <p className="font-street" style={{
-          color: 'rgba(240,237,232,0.5)',
-          letterSpacing: '0.05em',
-          marginBottom: '48px',
-        }}>
-          Stream. Écoute. Ressens l'univers AMIRI.
-        </p>
-
-        {/* Audiomack embed */}
-        <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: '1px solid rgba(201,168,76,0.2)',
-          padding: '4px',
-          marginBottom: '24px',
-        }}>
-          <iframe
-            title="Daïco Chup sur Audiomack"
-            src="https://audiomack.com/embed/daico-chup/song/dorimin-drill?background=1&theme=dark"
-            width="100%"
-            height="252"
-            frameBorder="0"
-            allow="encrypted-media"
-            style={{ display: 'block', background: '#080808' }}
-          />
-        </div>
-
-        {/* Platform links */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '48px' }}>
-          <a href="https://audiomack.com/daico-chup" target="_blank" rel="noopener noreferrer" className="platform-badge">
-            <IconMusic /> Audiomack
-            <IconExternal />
-          </a>
-          <a href="https://open.spotify.com" target="_blank" rel="noopener noreferrer" className="platform-badge">
-            <IconSpotify /> Spotify
-            <IconExternal />
-          </a>
-          <a href="https://www.qobuz.com" target="_blank" rel="noopener noreferrer" className="platform-badge">
-            <span style={{ fontSize: '0.7rem', fontWeight: 800 }}>Q</span> Qobuz
-            <IconExternal />
-          </a>
-        </div>
-
-        {/* Track list teaser */}
-        <div style={{ borderTop: '1px solid rgba(201,168,76,0.15)', paddingTop: '32px' }}>
-          <p className="font-street" style={{ color: 'rgba(240,237,232,0.4)', fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '16px' }}>
-            Tracks en vedette
+      <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <Reveal>
+          <SectionLabel>Streaming</SectionLabel>
+          <h2 className="font-display text-gold-gradient" style={{
+            fontSize: 'clamp(32px, 6vw, 64px)',
+            fontWeight: 800,
+            marginBottom: '8px',
+          }}>
+            La Musique
+          </h2>
+          <p className="font-street" style={{
+            color: 'rgba(240,237,232,0.5)',
+            letterSpacing: '0.05em',
+            marginBottom: '48px',
+          }}>
+            Stream. Écoute. Ressens l&apos;univers AMIRI.
           </p>
-          {[
-            { title: 'DORIMIN DRILL', desc: 'Le cut qui a tout lancé' },
-            { title: 'Djandjou 2K6', desc: 'Afrodrill pur — rythme et lame' },
-          ].map((track, i) => (
-            <div key={i} style={{
+        </Reveal>
+
+        {/* Bento Grid */}
+        <Reveal delay={0.1}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1.6fr 1fr',
+            gap: '12px',
+            marginBottom: '12px',
+          }} className="bento-grid">
+            {/* Audiomack embed - spans full height left */}
+            <div className="bento-card" style={{
+              gridRow: 'span 2',
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+            }}>
+              <iframe
+                title="Daïco Chup sur Audiomack"
+                src="https://audiomack.com/embed/daico-chup/song/dorimin-drill?background=1&theme=dark"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                allow="encrypted-media"
+                style={{ display: 'block', background: '#080808', minHeight: '280px' }}
+              />
+            </div>
+
+            {/* Track list */}
+            <div className="bento-card" style={{ padding: '20px' }}>
+              <div className="font-street" style={{
+                color: 'rgba(240,237,232,0.4)',
+                fontSize: '0.65rem',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                marginBottom: '12px',
+              }}>
+                Tracks
+              </div>
+              {tracks.map((track, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 0',
+                  borderBottom: i < tracks.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span className="font-street" style={{
+                      color: '#8B0000',
+                      fontSize: '0.7rem',
+                      minWidth: '18px',
+                      fontWeight: 700,
+                    }}>
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <div>
+                      <div className="font-street" style={{ fontWeight: 700, letterSpacing: '0.05em', color: '#F0EDE8', fontSize: '0.85rem' }}>
+                        {track.title}
+                      </div>
+                      <div style={{ color: 'rgba(240,237,232,0.35)', fontSize: '0.7rem', marginTop: '2px' }}>
+                        {track.desc}
+                      </div>
+                    </div>
+                  </div>
+                  <a href="https://audiomack.com/daico-chup" target="_blank" rel="noopener noreferrer" style={{
+                    color: '#C9A84C',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '0.7rem',
+                    textDecoration: 'none',
+                    opacity: 0.7,
+                    transition: 'opacity 0.2s',
+                  }}>
+                    <IconPlay />
+                  </a>
+                </div>
+              ))}
+              <a href="https://audiomack.com/daico-chup" target="_blank" rel="noopener noreferrer"
+                className="font-street" style={{
+                  color: '#C9A84C',
+                  fontSize: '0.7rem',
+                  textDecoration: 'none',
+                  display: 'block',
+                  marginTop: '12px',
+                  textAlign: 'right',
+                  letterSpacing: '0.1em',
+                  opacity: 0.6,
+                  transition: 'opacity 0.2s',
+                }}>
+                Voir tout →
+              </a>
+            </div>
+
+            {/* Stats + platforms */}
+            <div className="bento-card" style={{
+              padding: '16px 20px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '14px 0',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span className="font-street" style={{ color: '#8B0000', fontSize: '0.75rem', minWidth: '20px' }}>
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div>
-                  <div className="font-street" style={{ fontWeight: 700, letterSpacing: '0.05em', color: '#F0EDE8', fontSize: '0.95rem' }}>
-                    {track.title}
+              <div style={{ display: 'flex', gap: '20px' }}>
+                {[
+                  { num: '186', label: 'Plays' },
+                  { num: '1K+', label: 'Vues' },
+                ].map((s, i) => (
+                  <div key={i} style={{ textAlign: 'center' }}>
+                    <div className="font-display text-gold-gradient" style={{ fontSize: '1.3rem', fontWeight: 800 }}>{s.num}</div>
+                    <div className="font-street" style={{ color: 'rgba(240,237,232,0.3)', fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{s.label}</div>
                   </div>
-                  <div style={{ color: 'rgba(240,237,232,0.4)', fontSize: '0.75rem', marginTop: '2px' }}>
-                    {track.desc}
-                  </div>
-                </div>
+                ))}
               </div>
-              <a href="https://audiomack.com/daico-chup" target="_blank" rel="noopener noreferrer" style={{
-                color: '#C9A84C',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.75rem',
-                textDecoration: 'none',
-                transition: 'color 0.2s',
-              }}>
-                <IconPlay /> Écouter
-              </a>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {[
+                  { icon: <IconSpotify />, href: 'https://open.spotify.com' },
+                  { icon: <IconMusic />, href: 'https://audiomack.com/daico-chup' },
+                ].map((p, i) => (
+                  <a key={i} href={p.href} target="_blank" rel="noopener noreferrer" style={{
+                    color: 'rgba(240,237,232,0.4)',
+                    padding: '6px',
+                    borderRadius: '4px',
+                    border: '1px solid rgba(201,168,76,0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.2s',
+                  }}>
+                    {p.icon}
+                  </a>
+                ))}
+              </div>
             </div>
-          ))}
+          </div>
+        </Reveal>
+
+        {/* Full-width platform badges row */}
+        <Reveal delay={0.2}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <a href="https://audiomack.com/daico-chup" target="_blank" rel="noopener noreferrer" className="platform-badge">
+              <IconMusic /> Audiomack <IconExternal />
+            </a>
+            <a href="https://open.spotify.com" target="_blank" rel="noopener noreferrer" className="platform-badge">
+              <IconSpotify /> Spotify <IconExternal />
+            </a>
+            <a href="https://www.qobuz.com" target="_blank" rel="noopener noreferrer" className="platform-badge">
+              <span style={{ fontSize: '0.7rem', fontWeight: 800 }}>Q</span> Qobuz <IconExternal />
+            </a>
+          </div>
+        </Reveal>
+      </div>
+
+      <KatanaDivider />
+    </section>
+  );
+}
+
+/* ─── BIO ─── */
+function Bio() {
+  return (
+    <section id="bio" style={{
+      background: 'linear-gradient(180deg, #080808 0%, #0d0202 50%, #080808 100%)',
+      padding: '80px 24px 100px',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      <ParallaxKanji text="武" style={{ top: '15%', left: '5%' }} />
+      <ParallaxKanji text="魂" style={{ bottom: '10%', right: '3%' }} />
+      <VerticalText text="一 刀 両 断" position="right" />
+
+      {/* AMIRI watermark */}
+      <div className="font-display" style={{
+        position: 'absolute',
+        fontSize: 'clamp(100px, 20vw, 260px)',
+        fontWeight: 800,
+        color: 'transparent',
+        WebkitTextStroke: '1px rgba(255,0,0,0.2)',
+        filter: 'drop-shadow(0 0 8px rgba(255,0,0,0.15)) drop-shadow(0 0 25px rgba(255,0,0,0.1)) drop-shadow(0 0 50px rgba(139,0,0,0.08))',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        letterSpacing: '0.05em',
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+        userSelect: 'none',
+      }}>
+        AMIRI
+      </div>
+
+      <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <Reveal>
+          <SectionLabel>L&apos;artiste</SectionLabel>
+          <h2 className="font-display text-gold-gradient" style={{
+            fontSize: 'clamp(32px, 6vw, 64px)',
+            fontWeight: 800,
+            marginBottom: '48px',
+          }}>
+            Qui est Daïco Chup?
+          </h2>
+        </Reveal>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '40px',
+          alignItems: 'start',
+        }}>
+          <Reveal delay={0.1}>
+            <div>
+              <p style={{
+                color: 'rgba(240,237,232,0.8)',
+                lineHeight: 1.8,
+                fontSize: '0.95rem',
+                marginBottom: '24px',
+              }}>
+                <span className="font-display" style={{ color: '#C9A84C', fontWeight: 700, fontSize: '1.2em' }}>D</span>aïco Chup forge sa propre voie dans le paysage musical africain.
+                Né du Bénin, il fusionne l&apos;énergie brute de la{' '}
+                <span style={{ color: '#C9A84C' }}>drill</span> avec les rythmiques africaines
+                pour créer un son qu&apos;on appelle <span style={{ color: '#C9A84C' }}>afrodrill</span> — tranchant, cinématique, sans compromis.
+              </p>
+              <p style={{
+                color: 'rgba(240,237,232,0.6)',
+                lineHeight: 1.8,
+                fontSize: '0.9rem',
+              }}>
+                Son univers tourne autour de <strong style={{ color: '#8B0000' }}>AMIRI</strong>,
+                le nom de son katana. La lame comme métaphore du son : propre, précis, définitif.
+                Chaque track est un coup porté. Chaque beat, une cicatrice.
+              </p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={0.2}>
+            <div>
+              <p style={{
+                color: 'rgba(240,237,232,0.6)',
+                lineHeight: 1.8,
+                fontSize: '0.9rem',
+                marginBottom: '24px',
+              }}>
+                Influencé par la discipline et l&apos;esthétique du Japon féodal autant que par
+                les rues de Cotonou, Daïco construit une identité visuelle et sonore qui n&apos;appartient qu&apos;à lui.
+              </p>
+
+              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                {[
+                  { num: '1K+', label: 'Vues YouTube' },
+                  { num: '186', label: 'Plays Audiomack' },
+                  { num: '∞', label: 'Potentiel' },
+                ].map((s, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
+                    style={{ textAlign: 'center' }}
+                  >
+                    <div className="font-display text-gold-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>{s.num}</div>
+                    <div className="font-street" style={{ color: 'rgba(240,237,232,0.4)', fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{s.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
         </div>
       </div>
 
@@ -547,7 +828,7 @@ function Musique() {
   );
 }
 
-/* ─── VIDÉOS ─── */
+/* ─── VIDÉOS (with hover backdrop) ─── */
 function Videos() {
   const videos = [
     {
@@ -569,17 +850,20 @@ function Videos() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      <span className="kanji-bg" style={{ top: '10%', right: '2%', opacity: 0.05 }}>映</span>
+      <ParallaxKanji text="映" style={{ top: '10%', right: '2%' }} />
+      <VerticalText text="画 像 戦" position="left" />
 
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <SectionLabel>Clips</SectionLabel>
-        <h2 className="font-display text-gold-gradient" style={{
-          fontSize: 'clamp(32px, 6vw, 64px)',
-          fontWeight: 800,
-          marginBottom: '48px',
-        }}>
-          Les Vidéos
-        </h2>
+      <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <Reveal>
+          <SectionLabel>Clips</SectionLabel>
+          <h2 className="font-display text-gold-gradient" style={{
+            fontSize: 'clamp(32px, 6vw, 64px)',
+            fontWeight: 800,
+            marginBottom: '48px',
+          }}>
+            Les Vidéos
+          </h2>
+        </Reveal>
 
         <div style={{
           display: 'grid',
@@ -587,155 +871,78 @@ function Videos() {
           gap: '24px',
         }}>
           {videos.map((v, i) => (
-            <div key={i} className="video-frame" style={{ position: 'relative' }}>
-              <div style={{
-                position: 'absolute',
-                top: 0, left: 0,
-                background: 'linear-gradient(135deg, transparent 70%, rgba(139,0,0,0.3))',
-                zIndex: 1,
-                pointerEvents: 'none',
-                width: '100%', height: '100%',
-              }} />
-              <iframe
-                width="100%"
-                height="250"
-                src={`https://www.youtube.com/embed/${v.id}?modestbranding=1&rel=0&color=red`}
-                title={v.title}
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                style={{ display: 'block' }}
-              />
-              <div style={{
-                padding: '14px 16px',
-                background: 'rgba(10,5,5,0.9)',
-                borderTop: '1px solid rgba(201,168,76,0.15)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}>
-                <div>
-                  <div className="font-street" style={{ fontWeight: 700, color: '#F0EDE8', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
-                    {v.title}
+            <Reveal key={i} delay={i * 0.1}>
+              <motion.div
+                className="video-frame"
+                whileHover={{ scale: 1.02, y: -4 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                style={{ position: 'relative' }}
+              >
+                {/* Hover backdrop glow */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.08) 0%, transparent 70%)',
+                    zIndex: 2,
+                    pointerEvents: 'none',
+                  }}
+                />
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 0,
+                  background: 'linear-gradient(135deg, transparent 70%, rgba(139,0,0,0.3))',
+                  zIndex: 1,
+                  pointerEvents: 'none',
+                  width: '100%', height: '100%',
+                }} />
+                <iframe
+                  width="100%"
+                  height="250"
+                  src={`https://www.youtube.com/embed/${v.id}?modestbranding=1&rel=0&color=red`}
+                  title={v.title}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ display: 'block', position: 'relative', zIndex: 3 }}
+                />
+                <div style={{
+                  padding: '14px 16px',
+                  background: 'rgba(10,5,5,0.9)',
+                  borderTop: '1px solid rgba(201,168,76,0.15)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  position: 'relative',
+                  zIndex: 3,
+                }}>
+                  <div>
+                    <div className="font-street" style={{ fontWeight: 700, color: '#F0EDE8', fontSize: '0.9rem', letterSpacing: '0.05em' }}>
+                      {v.title}
+                    </div>
+                    <div className="font-street" style={{ color: '#8B0000', fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                      {v.label}
+                    </div>
                   </div>
-                  <div className="font-street" style={{ color: '#8B0000', fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
-                    {v.label}
-                  </div>
+                  <a href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer"
+                    style={{ color: '#C9A84C', fontSize: '0.75rem' }}>
+                    <IconExternal />
+                  </a>
                 </div>
-                <a href={`https://www.youtube.com/watch?v=${v.id}`} target="_blank" rel="noopener noreferrer"
-                  style={{ color: '#C9A84C', fontSize: '0.75rem' }}>
-                  <IconExternal />
-                </a>
-              </div>
-            </div>
+              </motion.div>
+            </Reveal>
           ))}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '40px' }}>
-          <a href="https://www.youtube.com/@daicochup" target="_blank" rel="noopener noreferrer" className="btn-secondary">
-            <IconYouTube /> Voir toute la chaîne
-          </a>
-        </div>
-      </div>
-
-      <KatanaDivider />
-    </section>
-  );
-}
-
-/* ─── BIO ─── */
-function Bio() {
-  return (
-    <section id="bio" style={{
-      background: 'linear-gradient(180deg, #080808 0%, #0d0202 50%, #080808 100%)',
-      padding: '80px 24px 100px',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
-      {/* Big AMIRI watermark */}
-      <div className="font-display" style={{
-        position: 'absolute',
-        fontSize: 'clamp(100px, 20vw, 260px)',
-        fontWeight: 800,
-        color: 'transparent',
-        WebkitTextStroke: '1px rgba(255,0,0,0.2)',
-        filter: 'drop-shadow(0 0 8px rgba(255,0,0,0.15)) drop-shadow(0 0 25px rgba(255,0,0,0.1)) drop-shadow(0 0 50px rgba(139,0,0,0.08))',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        letterSpacing: '0.05em',
-        whiteSpace: 'nowrap',
-        pointerEvents: 'none',
-        userSelect: 'none',
-      }}>
-        AMIRI
-      </div>
-
-      <div style={{ maxWidth: '800px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
-        <SectionLabel>L&apos;artiste</SectionLabel>
-        <h2 className="font-display text-gold-gradient" style={{
-          fontSize: 'clamp(32px, 6vw, 64px)',
-          fontWeight: 800,
-          marginBottom: '48px',
-        }}>
-          Qui est Daïco Chup?
-        </h2>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '40px',
-          alignItems: 'start',
-        }}>
-          <div>
-                <p style={{
-                  color: 'rgba(240,237,232,0.8)',
-                  lineHeight: 1.8,
-                  fontSize: '0.95rem',
-                  marginBottom: '24px',
-                }}>
-                  <span className="font-display" style={{ color: '#C9A84C', fontWeight: 700, fontSize: '1.2em' }}>D</span>aïco Chup forge sa propre voie dans le paysage musical africain.
-                  Né du Bénin, il fusionne l&apos;énergie brute de la{' '}
-                  <span style={{ color: '#C9A84C' }}>drill</span> avec les rythmiques africaines
-                  pour créer un son qu&apos;on appelle <span style={{ color: '#C9A84C' }}>afrodrill</span> — tranchant, cinématique, sans compromis.
-                </p>
-                <p style={{
-                  color: 'rgba(240,237,232,0.6)',
-                  lineHeight: 1.8,
-                  fontSize: '0.9rem',
-                }}>
-                  Son univers tourne autour de <strong style={{ color: '#8B0000' }}>AMIRI</strong>,
-                  le nom de son katana. La lame comme métaphore du son : propre, précis, définitif.
-                  Chaque track est un coup porté. Chaque beat, une cicatrice.
-                </p>
-              </div>
-
-              <div>
-                <p style={{
-                  color: 'rgba(240,237,232,0.6)',
-                  lineHeight: 1.8,
-                  fontSize: '0.9rem',
-                  marginBottom: '24px',
-                }}>
-                  Influencé par la discipline et l&apos;esthétique du Japon féodal autant que par
-                  les rues de Cotonou, Daïco construit une identité visuelle et sonore qui n&apos;appartient qu&apos;à lui.
-                </p>
-
-                {/* Stats */}
-                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                  {[
-                    { num: '1K+', label: 'Vues YouTube' },
-                    { num: '186', label: 'Plays Audiomack' },
-                    { num: '∞', label: 'Potentiel' },
-                  ].map((s, i) => (
-                    <div key={i} style={{ textAlign: 'center' }}>
-                      <div className="font-display text-gold-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>{s.num}</div>
-                      <div className="font-street" style={{ color: 'rgba(240,237,232,0.4)', fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{s.label}</div>
-                    </div>
-                  ))}
-                </div>
+        <Reveal delay={0.2}>
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
+            <a href="https://www.youtube.com/@daicochup" target="_blank" rel="noopener noreferrer" className="btn-secondary">
+              <IconYouTube /> Voir toute la chaîne
+            </a>
           </div>
-        </div>
+        </Reveal>
       </div>
 
       <KatanaDivider />
@@ -758,32 +965,38 @@ function Reseaux() {
       padding: '80px 24px',
       position: 'relative',
     }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        <SectionLabel>Suivre</SectionLabel>
-        <h2 className="font-display text-gold-gradient" style={{
-          fontSize: 'clamp(28px, 5vw, 52px)',
-          fontWeight: 800,
-          marginBottom: '12px',
-        }}>
-          Rejoins l&apos;univers
-        </h2>
-        <p className="font-street" style={{ color: 'rgba(240,237,232,0.4)', marginBottom: '48px', letterSpacing: '0.05em' }}>
-          Suis AMIRI sur toutes les plateformes
-        </p>
+      <VerticalText text="繋 が る" position="right" />
+
+      <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
+        <Reveal>
+          <SectionLabel>Suivre</SectionLabel>
+          <h2 className="font-display text-gold-gradient" style={{
+            fontSize: 'clamp(28px, 5vw, 52px)',
+            fontWeight: 800,
+            marginBottom: '12px',
+          }}>
+            Rejoins l&apos;univers
+          </h2>
+          <p className="font-street" style={{ color: 'rgba(240,237,232,0.4)', marginBottom: '48px', letterSpacing: '0.05em' }}>
+            Suis AMIRI sur toutes les plateformes
+          </p>
+        </Reveal>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {links.map((link, i) => (
-            <a key={i} href={link.url} target="_blank" rel="noopener noreferrer" className="social-link"
-              style={{ justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{ color: link.color }}>{link.icon}</span>
-                <span className="font-street" style={{ letterSpacing: '0.1em', fontSize: '0.9rem' }}>{link.label}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: 'rgba(240,237,232,0.3)', fontSize: '0.8rem' }}>{link.handle}</span>
-                <IconExternal />
-              </div>
-            </a>
+            <Reveal key={i} delay={i * 0.05}>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="social-link"
+                style={{ justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <span style={{ color: link.color }}>{link.icon}</span>
+                  <span className="font-street" style={{ letterSpacing: '0.1em', fontSize: '0.9rem' }}>{link.label}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ color: 'rgba(240,237,232,0.3)', fontSize: '0.8rem' }}>{link.handle}</span>
+                  <IconExternal />
+                </div>
+              </a>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -821,41 +1034,47 @@ function Newsletter() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      <span className="kanji-bg" style={{ bottom: '-5%', left: '50%', transform: 'translateX(-50%)', opacity: 0.04 }}>通</span>
+      <ParallaxKanji text="通" style={{ bottom: '-5%', left: '50%', fontSize: 'clamp(120px,20vw,250px)' }} />
 
       <div style={{ maxWidth: '560px', margin: '0 auto', textAlign: 'center', position: 'relative', zIndex: 2 }}>
-        <SectionLabel>Rester connecté</SectionLabel>
-        <h2 className="font-display" style={{
-          fontSize: 'clamp(28px, 5vw, 48px)',
-          fontWeight: 800,
-          marginBottom: '12px',
-          color: '#F0EDE8',
-        }}>
-          Entre dans le clan <span className="text-gold-gradient">AMIRI</span>
-        </h2>
-        <p style={{
-          color: 'rgba(240,237,232,0.5)',
-          fontSize: '0.9rem',
-          lineHeight: 1.7,
-          marginBottom: '40px',
-        }}>
-          Nouveaux sons, dates de concerts, contenus exclusifs.
-          Reçois l&apos;intel directement.
-        </p>
+        <Reveal>
+          <SectionLabel>Rester connecté</SectionLabel>
+          <h2 className="font-display" style={{
+            fontSize: 'clamp(28px, 5vw, 48px)',
+            fontWeight: 800,
+            marginBottom: '12px',
+            color: '#F0EDE8',
+          }}>
+            Entre dans le clan <span className="text-gold-gradient">AMIRI</span>
+          </h2>
+          <p style={{
+            color: 'rgba(240,237,232,0.5)',
+            fontSize: '0.9rem',
+            lineHeight: 1.7,
+            marginBottom: '40px',
+          }}>
+            Nouveaux sons, dates de concerts, contenus exclusifs.
+            Reçois l&apos;intel directement.
+          </p>
+        </Reveal>
 
         {status === 'done' ? (
-          <div style={{
-            padding: '24px',
-            border: '1px solid rgba(201,168,76,0.4)',
-            background: 'rgba(201,168,76,0.05)',
-          }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              padding: '24px',
+              border: '1px solid rgba(201,168,76,0.4)',
+              background: 'rgba(201,168,76,0.05)',
+            }}
+          >
             <div className="font-display text-gold-gradient" style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px' }}>
               Bienvenue dans le clan ◆
             </div>
             <p style={{ color: 'rgba(240,237,232,0.6)', fontSize: '0.85rem' }}>
               AMIRI te garde informé. Reste à l&apos;écoute.
             </p>
-          </div>
+          </motion.div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '0' }}>
@@ -923,43 +1142,57 @@ function Contact() {
       position: 'relative',
       overflow: 'hidden',
     }}>
-      <span className="kanji-bg" style={{ top: '20%', right: '-2%', opacity: 0.05 }}>契</span>
+      <ParallaxKanji text="契" style={{ top: '20%', right: '-2%' }} />
+      <VerticalText text="連 絡" position="left" />
 
-      <div style={{ maxWidth: '660px', margin: '0 auto' }}>
-        <SectionLabel>Booking & Contact</SectionLabel>
-        <h2 className="font-display text-gold-gradient" style={{
-          fontSize: 'clamp(28px, 5vw, 56px)',
-          fontWeight: 800,
-          marginBottom: '12px',
-        }}>
-          Travailler avec Daïco
-        </h2>
-        <p style={{
-          color: 'rgba(240,237,232,0.5)',
-          fontSize: '0.9rem',
-          marginBottom: '48px',
-          lineHeight: 1.7,
-        }}>
-          Concerts, collaborations, features, interviews.
-          AMIRI est disponible pour ceux qui méritent la lame.
-        </p>
+      <div style={{ maxWidth: '660px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
+        <Reveal>
+          <SectionLabel>Booking & Contact</SectionLabel>
+          <h2 className="font-display text-gold-gradient" style={{
+            fontSize: 'clamp(28px, 5vw, 56px)',
+            fontWeight: 800,
+            marginBottom: '12px',
+          }}>
+            Travailler avec Daïco
+          </h2>
+          <p style={{
+            color: 'rgba(240,237,232,0.5)',
+            fontSize: '0.9rem',
+            marginBottom: '48px',
+            lineHeight: 1.7,
+          }}>
+            Concerts, collaborations, features, interviews.
+            AMIRI est disponible pour ceux qui méritent la lame.
+          </p>
+        </Reveal>
 
         {status === 'done' ? (
-          <div style={{
-            padding: '32px',
-            border: '1px solid rgba(139,0,0,0.5)',
-            background: 'rgba(139,0,0,0.05)',
-            textAlign: 'center',
-          }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              padding: '32px',
+              border: '1px solid rgba(139,0,0,0.5)',
+              background: 'rgba(139,0,0,0.05)',
+              textAlign: 'center',
+            }}
+          >
             <div className="font-display" style={{ color: '#C9A84C', fontSize: '1.4rem', fontWeight: 800, marginBottom: '12px' }}>
               Message reçu ◆
             </div>
             <p style={{ color: 'rgba(240,237,232,0.6)', fontSize: '0.85rem' }}>
               On te répond dès que possible. AMIRI est patient.
             </p>
-          </div>
+          </motion.div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <motion.form
+            onSubmit={handleSubmit}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+          >
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div>
                 <label className="font-street" style={{ color: 'rgba(240,237,232,0.4)', fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
@@ -1001,7 +1234,7 @@ function Contact() {
                 Erreur d&apos;envoi — contacte directement sur Instagram.
               </p>
             )}
-          </form>
+          </motion.form>
         )}
       </div>
     </section>
@@ -1053,12 +1286,13 @@ function Footer() {
 export default function Page() {
   return (
     <>
+      <CustomCursor />
       <Navbar />
       <main>
         <Hero />
         <Musique />
-        <Videos />
         <Bio />
+        <Videos />
         <Reseaux />
         <Newsletter />
         <Contact />
