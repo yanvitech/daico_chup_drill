@@ -131,6 +131,85 @@ function VerticalText({ text, position = 'left' }: { text: string; position?: 'l
   );
 }
 
+/* ─── 3D Tilt Card ─── */
+function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [shine, setShine] = useState({ x: 50, y: 50 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onMove = (e: MouseEvent) => {
+      const rect = el.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = (e.clientX - cx) / (rect.width / 2);
+      const dy = (e.clientY - cy) / (rect.height / 2);
+      setTilt({ x: -dy * 12, y: dx * 12 });
+      setShine({
+        x: ((e.clientX - rect.left) / rect.width) * 100,
+        y: ((e.clientY - rect.top) / rect.height) * 100,
+      });
+    };
+    const onLeave = () => {
+      setTilt({ x: 0, y: 0 });
+      setShine({ x: 50, y: 50 });
+    };
+    el.addEventListener('mousemove', onMove);
+    el.addEventListener('mouseleave', onLeave);
+    return () => {
+      el.removeEventListener('mousemove', onMove);
+      el.removeEventListener('mouseleave', onLeave);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        perspective: '800px',
+        display: 'inline-block',
+        cursor: 'pointer',
+      }}
+    >
+      <motion.div
+        animate={{ rotateX: tilt.x, rotateY: tilt.y }}
+        transition={{ type: 'spring', stiffness: 250, damping: 18, mass: 0.5 }}
+        style={{
+          position: 'relative',
+          transformStyle: 'preserve-3d',
+          transition: 'box-shadow 0.3s',
+        }}
+      >
+        {children}
+        {/* Shine overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(201,168,76,0.12) 0%, transparent 60%)`,
+            mixBlendMode: 'overlay',
+          }}
+        />
+        {/* Edge glow */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: '-1px',
+            borderRadius: 'inherit',
+            background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(201,168,76,0.15) 0%, transparent 50%)`,
+            pointerEvents: 'none',
+            zIndex: -1,
+          }}
+        />
+      </motion.div>
+    </div>
+  );
+}
+
 /* ─── SVG Icons ─── */
 const IconPlay = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -430,7 +509,9 @@ function Hero() {
           transform: loaded ? 'translateY(0)' : 'translateY(-20px)',
           transition: 'all 0.8s ease',
         }}>
-          <DaicoLogo size={120} />
+          <TiltCard>
+            <DaicoLogo size={120} />
+          </TiltCard>
         </div>
 
         <div style={{
