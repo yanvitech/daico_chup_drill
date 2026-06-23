@@ -171,48 +171,109 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 /* ─── NAVBAR ─── */
 function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', check);
+    };
   }, []);
+
+  const links = ['musique', 'videos', 'bio', 'contact'];
 
   return (
     <nav style={{
       position: 'fixed',
       top: 0, left: 0, right: 0,
       zIndex: 100,
-      padding: '16px 32px',
+      padding: isMobile ? '12px 16px' : '16px 32px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
       transition: 'all 0.3s ease',
-      background: scrolled ? 'rgba(4,4,4,0.95)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(12px)' : 'none',
+      background: scrolled || menuOpen ? 'rgba(4,4,4,0.97)' : 'transparent',
+      backdropFilter: scrolled || menuOpen ? 'blur(12px)' : 'none',
       borderBottom: scrolled ? '1px solid rgba(201,168,76,0.15)' : '1px solid transparent',
     }}>
-      <a href="#hero" style={{ textDecoration: 'none' }}>
-        <DaicoLogo size={60} />
+      <a href="#hero" style={{ textDecoration: 'none', flexShrink: 0 }}>
+        <DaicoLogo size={isMobile ? 44 : 60} />
       </a>
-      <div className="font-street" style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-        {['musique', 'videos', 'bio', 'contact'].map((id) => (
-          <a key={id} href={`#${id}`} style={{
-            color: 'rgba(240,237,232,0.7)',
-            textDecoration: 'none',
-            fontSize: '0.8rem',
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            transition: 'color 0.2s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,237,232,0.7)')}
-          >{id}</a>
-        ))}
-        <a href="#contact" className="btn-primary" style={{ fontSize: '0.75rem', padding: '8px 20px' }}>
-          Booking
-        </a>
-      </div>
+
+      {isMobile ? (
+        <>
+          {/* Hamburger */}
+          <button onClick={() => setMenuOpen(!menuOpen)} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#C9A84C', padding: '8px', zIndex: 101,
+            display: 'flex', flexDirection: 'column', gap: '5px',
+          }}>
+            <span style={{ display: 'block', width: '24px', height: '2px', background: '#C9A84C', transition: '0.3s', transform: menuOpen ? 'rotate(45deg) translate(5px,5px)' : 'none' }} />
+            <span style={{ display: 'block', width: '24px', height: '2px', background: '#C9A84C', transition: '0.3s', opacity: menuOpen ? 0 : 1 }} />
+            <span style={{ display: 'block', width: '24px', height: '2px', background: '#C9A84C', transition: '0.3s', transform: menuOpen ? 'rotate(-45deg) translate(5px,-5px)' : 'none' }} />
+          </button>
+
+          {/* Mobile menu */}
+          {menuOpen && (
+            <div onClick={() => setMenuOpen(false)} style={{
+              position: 'fixed', inset: 0, zIndex: 99,
+              background: 'rgba(0,0,0,0.6)',
+            }}>
+              <div onClick={e => e.stopPropagation()} className="font-street" style={{
+                position: 'fixed', top: 0, right: 0, bottom: 0,
+                width: '260px', zIndex: 100,
+                background: '#0a0a0a',
+                borderLeft: '1px solid rgba(201,168,76,0.15)',
+                padding: '100px 32px 32px',
+                display: 'flex', flexDirection: 'column', gap: '8px',
+              }}>
+                {links.map((id) => (
+                  <a key={id} href={`#${id}`} onClick={() => setMenuOpen(false)} style={{
+                    color: 'rgba(240,237,232,0.7)',
+                    textDecoration: 'none', display: 'block',
+                    fontSize: '1.1rem', letterSpacing: '0.15em',
+                    textTransform: 'uppercase', padding: '12px 0',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    transition: 'color 0.2s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,237,232,0.7)')}
+                  >{id}</a>
+                ))}
+                <a href="#contact" onClick={() => setMenuOpen(false)} className="btn-primary" style={{ marginTop: '16px', justifyContent: 'center' }}>
+                  Booking
+                </a>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        /* Desktop links */
+        <div className="font-street" style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+          {links.map((id) => (
+            <a key={id} href={`#${id}`} style={{
+              color: 'rgba(240,237,232,0.7)',
+              textDecoration: 'none',
+              fontSize: '0.8rem',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(240,237,232,0.7)')}
+            >{id}</a>
+          ))}
+          <a href="#contact" className="btn-primary" style={{ fontSize: '0.75rem', padding: '8px 20px' }}>
+            Booking
+          </a>
+        </div>
+      )}
     </nav>
   );
 }
